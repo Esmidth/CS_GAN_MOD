@@ -28,6 +28,9 @@ import tensorflow_probability as tfp
 from cs_gan import cs
 from cs_gan import file_utils
 from cs_gan import utils
+# import cs
+# import file_utils
+# import utils
 
 tfd = tfp.distributions
 
@@ -69,11 +72,14 @@ tf.logging.set_verbosity(tf.logging.INFO)
 
 def main(argv):
   del argv
-
-  utils.make_output_dir(FLAGS.output_dir)
+  #创建输出目录
+  utils.make_output_dir(FLAGS.output_dir) 
   data_processor = utils.DataProcessor()
   images = utils.get_train_dataset(data_processor, FLAGS.dataset,
                                    FLAGS.batch_size)
+  #tf.data.Dataset.from_tensor_slices()
+  #dataset.make_one_shot_iterator()
+  #images -> data_batch
 
   logging.info('Learning rate: %d', FLAGS.learning_rate)
 
@@ -83,14 +89,18 @@ def main(argv):
   # Create the networks and models.
   generator = utils.get_generator(FLAGS.dataset)
   metric_net = utils.get_metric_net(FLAGS.dataset, FLAGS.num_measurements)
+  # GAN components, num_measurements: 25^^^
+
   model = cs.CS(metric_net, generator,
                 FLAGS.num_z_iters, FLAGS.z_step_size, FLAGS.z_project_method)
   prior = utils.make_prior(FLAGS.num_latents)
   generator_inputs = prior.sample(FLAGS.batch_size)
 
-  model_output = model.connect(images, generator_inputs)
+  model_output = model.connect(images, generator_inputs) 
+  # connect(data, generator_inputs) 
   optimization_components = model_output.optimization_components
   debug_ops = model_output.debug_ops
+
   reconstructions, _ = utils.optimise_and_sample(
       generator_inputs, model, images, is_training=False)
 

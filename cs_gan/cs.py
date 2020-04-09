@@ -69,12 +69,17 @@ class CS(object):
 
     samples, optimised_z = utils.optimise_and_sample(
         generator_inputs, self, data, is_training=True)
+    "优化生成器，得到100个生成器生成的样本和初始值"
+
     optimisation_cost = utils.get_optimisation_cost(generator_inputs,
                                                     optimised_z)
     debug_ops = {}
 
     initial_samples = self.generator(generator_inputs, is_training=True)
+    "得到由原始种子生成的样本"
     generator_loss = tf.reduce_mean(self.gen_loss_fn(data, samples))
+    "比较生成器生成样本和真实数据之间的loss"
+
     # compute the RIP loss
     # (\sqrt{F(x_1 - x_2)^2} - \sqrt{(x_1 - x_2)^2})^2
     # as a triplet loss for 3 pairs of images.
@@ -84,6 +89,8 @@ class CS(object):
     r3 = self._get_rip_loss(initial_samples, data)
     rip_loss = tf.reduce_mean((r1 + r2 + r3) / 3.0)
     total_loss = generator_loss + rip_loss
+
+    
     optimization_components = self._build_optimization_components(
         generator_loss=total_loss)
     debug_ops['rip_loss'] = rip_loss

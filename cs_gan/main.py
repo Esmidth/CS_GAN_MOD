@@ -97,6 +97,7 @@ def main(argv):
   model = gan.GAN(metric_net, generator,
                   FLAGS.num_z_iters, FLAGS.z_step_size,
                   FLAGS.z_project_method, FLAGS.optimisation_cost_weight)
+    #discriminator is metric_net
   prior = utils.make_prior(FLAGS.num_latents)
   generator_inputs = prior.sample(FLAGS.batch_size)
 

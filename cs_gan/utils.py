@@ -19,7 +19,7 @@ import os
 
 from absl import logging
 import numpy as np
-import tensorflow.compat.v1 as tf
+import tensorflow as tf
 import tensorflow_probability as tfp
 
 from cs_gan import nets
@@ -88,6 +88,12 @@ def cross_entropy_loss(logits, expected):
 
 def optimise_and_sample(init_z, module, data, is_training):
   """Optimising generator latent variables and sample."""
+  "Latent variable 隐含变量、潜在变量"
+  "init_z <- generator_inputs <- prior.sample(FLAGS.batchsize) <- prior = utils.make_prior(FLAGS.num_latents)"
+  "num_latents: 100"
+  "num_z_iters: 3"
+  "init_z: 100 sample tensor follows tfd.Normal distribution"
+
 
   if module.num_z_iters == 0:
     z_final = init_z
@@ -95,11 +101,13 @@ def optimise_and_sample(init_z, module, data, is_training):
     init_loop_vars = (0, _project_z(init_z, module.z_project_method))
     loop_cond = lambda i, _: i < module.num_z_iters
     def loop_body(i, z):
-      loop_samples = module.generator(z, is_training)
+      loop_samples = module.generator(z, is_training) # a generated tensor 28*28 for example
       gen_loss = module.gen_loss_fn(data, loop_samples)
       z_grad = tf.gradients(gen_loss, z)[0]
       z -= module.z_step_size * z_grad
-      z = _project_z(z, module.z_project_method)
+      z = _project_z(z, module.z_project_method) 
+      "L2标准化每个梯度下降过的样本"
+      
       return i + 1, z
 
     # Use the following static loop for debugging
@@ -116,6 +124,7 @@ def optimise_and_sample(init_z, module, data, is_training):
 
 
 def get_optimisation_cost(initial_z, optimised_z):
+  "初始的种子和优化过的种子间的loss"
   optimisation_cost = tf.reduce_mean(
       tf.reduce_sum((optimised_z - initial_z)**2, -1))
   return optimisation_cost
@@ -144,7 +153,7 @@ class DataProcessor(object):
 def _get_np_data(data_processor, dataset, split='train'):
   """Get the dataset as numpy arrays."""
   index = 0 if split == 'train' else 1
-  if dataset == 'mnist':
+  if dataset  == 'mnist':
     # Construct the dataset.
     x, _ = tf.keras.datasets.mnist.load_data()[index]
     # Note: tf dataset is binary so we convert it to float.
@@ -159,7 +168,7 @@ def _get_np_data(data_processor, dataset, split='train'):
 
   if data_processor:
     # Normalize data if a processor is given.
-    x = data_processor.preprocess(x)
+    x = data_processor.preprocess(x) #Mnist & Cifar 的固定数据处理？ 标准化？
   return x
 
 
@@ -197,6 +206,8 @@ def get_summaries(ops):
 def get_train_dataset(data_processor, dataset, batch_size):
   """Creates the training data tensors."""
   x_train = _get_np_data(data_processor, dataset, split='train')
+  # data_processor 包括前向和后向两个操作
+
   # Create the TF dataset.
   dataset = tf.data.Dataset.from_tensor_slices(x_train)
 
